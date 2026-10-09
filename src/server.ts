@@ -46,7 +46,73 @@ const initDB = async () => {
 initDB();
 
 app.get("/", (req: express.Request, res: express.Response) => {
-  res.send("Hello World! I am learning TypeScript with Express and PostgreSQL.");
+  res.send(
+    "Hello World! I am learning TypeScript with Express and PostgreSQL.",
+  );
+});
+
+//users CRUD operations
+app.post("/users", async (req: express.Request, res: express.Response) => {
+  const { name, email } = req.body;
+
+  try {
+    const result = await pool.query(
+      `INSERT INTO users (name, email) VALUES ($1, $2) RETURNING *`,
+      [name, email],
+    );
+    //console.log(result.rows[0]);
+    return res.status(201).json({
+      success: true,
+      message: "User created successfully",
+      data: result.rows[0],
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+app.get("/users", async (req: express.Request, res: express.Response) => {
+  try {
+    const result = await pool.query(`SELECT * FROM users`);
+    return res.status(200).json({
+      success: true,
+      message: "Users retrieved successfully",
+      data: result.rows,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+// /users/:id
+app.get("/users/:id", async (req: express.Request, res: express.Response) => {
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query(`SELECT * FROM users WHERE id = $1`, [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      message: "User retrieved successfully",
+      data: result.rows[0],
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
 });
 
 app.listen(port, () => {
